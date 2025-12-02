@@ -83,7 +83,8 @@ async def main():
         channel_id INTEGER PRIMARY KEY,
         user_id INTEGER
         email VARCHAR(64) NOT NULL,
-        password VARCHAR(64) NOT NULL
+        password VARCHAR(64) NOT NULL,
+        balance INTEGER DEFAULT 0
     )            
     """)
     cursor.execute("""

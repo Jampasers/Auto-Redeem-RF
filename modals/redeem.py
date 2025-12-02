@@ -19,21 +19,31 @@ class RedeemModal(discord.ui.Modal, title="🎟 Redeem Code"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        guild = interaction.guild
         conn = sqlite3.connect("redeem.db")
         cursor = conn.cursor()
-        guild = interaction.guild
-        category = guild.get_channel(os.getenv("REDEEM_CATEGORY_ID"))
 
-        if category is None or not isinstance(category, discord.CategoryChannel):
-            return await interaction.response.send_message("Wrong category ID", ephemeral=True)
+        cursor.execute("SELECT email, channel_id FROM redeems WHERE channel_id = ?", [interaction.channel.id])
+        row = cursor.fetchone()
 
-        channel = await category.create_text_channel(f'{interaction.user.name}-redeem')
-        cursor.execute("""
-            INSERT INTO redeems (channel_id, user_id, email, password) VALUES (?,?,?,?)
-        """, [channel.id, interaction.user.id, self.email.value, self.password.value])
+        if row[0]:
+            cursor.execute("UPDATE redeem SET email = ?, password = ?", [self.email.value, self.password.value])
+            conn.commit()
+            channel = guild.get_channel(row[1])
+            await interaction.response.send_message(f'Channel already created at {channel.mention}', ephemeral=True)
+        else: 
+            category = guild.get_channel(os.getenv("REDEEM_CATEGORY_ID"))
 
-        await interaction.response.send_message(f'Channel created at {channel.mention}')
-        # channel = await interaction.guild.create_text_channel(f'{interaction.user.name}-redeem', category=await discord.utils.get(interaction.guild.categories, ))
+            if category is None or not isinstance(category, discord.CategoryChannel):
+                return await interaction.response.send_message("Wrong category ID", ephemeral=True)
+
+            channel = await category.create_text_channel(f'{interaction.user.name}-redeem')
+            cursor.execute("""
+                INSERT INTO redeems (channel_id, user_id, email, password) VALUES (?,?,?,?)
+            """, [channel.id, interaction.user.id, self.email.value, self.password.value])
+
+            await interaction.response.send_message(f'Channel created at {channel.mention}', ephemeral=True)
+            # channel = await interaction.guild.create_text_channel(f'{interaction.user.name}-redeem', category=await discord.utils.get(interaction.guild.categories, ))
 
     async def on_error(self, error: Exception, interaction: discord.Interaction):
         await interaction.response.send_message(

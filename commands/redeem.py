@@ -6,7 +6,7 @@ class Redeem(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(name="redeem", description="Show auto redeem panel", guild_only=True,guild_ids=os.getenv("GUILD_ID").split(","))
-    @commands.has_any_role(1445321100555718707)
+    @commands.has_any_role(os.getenv("ADMIN_ROLE"))
     async def redeem(self, ctx: commands.Context):
         print("Sek")
         
